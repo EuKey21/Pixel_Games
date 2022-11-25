@@ -5,7 +5,7 @@ using namespace std;
 
 
 wstring blocks[7]; // 4x4
-int blockWidth = 4;
+int blockLength = 4;
 
 int screenWidth = 120;
 int screenHeight = 30;
@@ -27,7 +27,9 @@ r -> rotating direction
 8   9  10  11       .       .       .       .       .       .
 12 13  14  15       15 .... 3       3  .... 0       0 .... 12
 ****************************************************************/
-int rotate(int x, int y, int r);
+int Rotate(int x, int y, int r);
+
+bool BlockCollision(int block, int rotation, int posX, int posY);
 
 int main()
 {
@@ -55,34 +57,34 @@ int main()
     blocks[0].append(L"..X.");
     blocks[0].append(L"..X.");
 
+    blocks[1].append(L"....");
     blocks[1].append(L".XX.");
     blocks[1].append(L"..X.");
     blocks[1].append(L"..X.");
-    blocks[1].append(L"....");
 
+    blocks[2].append(L"....");
     blocks[2].append(L".XX.");
     blocks[2].append(L".X..");
     blocks[2].append(L".X..");
-    blocks[2].append(L"....");
 
+    blocks[3].append(L"....");
     blocks[3].append(L".XX.");
     blocks[3].append(L".XX.");
     blocks[3].append(L"....");
-    blocks[3].append(L"....");
 
-    blocks[4].append(L".XX.");
+    blocks[4].append(L"....");
     blocks[4].append(L"..XX");
-    blocks[4].append(L"....");
+    blocks[4].append(L".XX.");
     blocks[4].append(L"....");
 
-    blocks[5].append(L".XX.");
+    blocks[5].append(L"....");
     blocks[5].append(L"XX..");
-    blocks[5].append(L"....");
+    blocks[5].append(L".XX.");
     blocks[5].append(L"....");
 
-    blocks[6].append(L"..X.");
-    blocks[6].append(L".XXX");
     blocks[6].append(L"....");
+    blocks[6].append(L".XXX");
+    blocks[6].append(L"..X.");
     blocks[6].append(L"....");
 
     /************************************************************/
@@ -98,18 +100,36 @@ int main()
     /************************************************************/
     /***********************Game Loop****************************/
     bool gameOver = false;
-    int fieldBorder = 5;
-    wstring symbol = L" =-#";
+    int fieldBorder = 5; // how far is the field away from the upper left
+    wstring fieldSymbol = L" +-#"; // field elements
+
+    int currentBlock = 0;
+    int currentRotation = 0;
+    int currentX = fieldWidth / 2;
+    int currentY = 0;
 
     while (gameOver == false)
     {
-        /*************Draw field**************/
+        /**************Timing*****************/
+
+        /**************Input******************/
+
+        /**************Logic******************/
+
+        /**************Output*****************/
+
+        /*********Draw field********/
         for (int x = 0; x < fieldWidth; x++)
             for (int y = 0; y < fieldHeight; y++)
-                screen[(y + fieldBorder) * screenWidth + (x + fieldBorder)] = symbol[pField[y * fieldWidth + x]];
+                screen[(y + fieldBorder) * screenWidth + (x + fieldBorder)] = fieldSymbol[pField[y * fieldWidth + x]];
 
+        /*****Draw Current Block****/
+        for (int x = 0; x < blockLength; x++)
+            for (int y = 0; y < blockLength; y++)
+                if (blocks[currentBlock][Rotate(x, y , currentBlock)] != L'.')
+                    screen[(currentY + y + fieldBorder) * screenWidth + (currentX + x + 2)] = fieldSymbol[1];
 
-        /**********Display frame**************/
+        /******Display frame********/
         WriteConsoleOutputCharacter(
             hConsole,
             screen,
@@ -132,21 +152,38 @@ int Rotate(int x, int y, int r)
     int posZero180 = 15;
     int posZero270 = 3;
 
-    int rotation = 0;
-    switch (r % blockWidth)
+    int index = 0;
+    switch (r % blockLength)
     {
     case 0:     // 0 degree
-        rotation = posZero000 + (y * blockWidth) + x;
+        index = posZero000 + (y * blockLength) + x;
         break;
     case 1:     // 90 degrees
-        rotation = posZero090 + y - (x * blockWidth);
+        index = posZero090 + y - (x * blockLength);
         break;
     case 2:     // 180 degree
-        rotation = posZero180 - (y * blockWidth) - x;
+        index = posZero180 - (y * blockLength) - x;
         break;
     case 3:     // 270 degree
-        rotation = posZero270 - y + (x * blockWidth);
+        index = posZero270 - y + (x * blockLength);
     }
 
-    return rotation;
+    return index;
+}
+
+bool BlockCollision(int block, int rotation, int posX, int posY)
+{
+    for (int x = 0; x < blockLength; x++)
+        for (int y = 0; y < blockLength; y++)
+        {
+            int blockIndex = Rotate(x, y, rotation);
+            int fieldIndex = (posY + y) * fieldWidth + (posX + x);
+
+            // Check if the dropping block is within the field
+            if (posX + x >= 0 && posX + x < fieldWidth)
+                if(posY + y >= 0 && posY +y < fieldHeight)
+                    if (blocks[block][blockIndex] != L'.' && pField[fieldIndex] != 0)
+                        return false; // dropped on a block
+        }
+    return true;
 }
