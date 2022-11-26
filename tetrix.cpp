@@ -1,4 +1,5 @@
 #include <iostream>
+#include <thread>
 #include <Windows.h>
 using namespace std;
 
@@ -15,6 +16,13 @@ int fieldWidth = 12;
 int fieldHeight = 18;
 int fieldArea = fieldWidth * fieldHeight;
 unsigned char* pField = nullptr;
+
+int fieldBorderDistance = 5; // how far is the field away from the upper left
+wstring fieldElement = L" +-#"; // field elements
+const int fieldSpace = 0;
+const int fieldBlock = 1;
+const int fieldFill = 2;
+const int fieldBorder = 3;
 
 /****************************************************************
 x -> x coordinates
@@ -92,42 +100,50 @@ int main()
     pField = new unsigned char[fieldArea];
     for (int x = 0; x < fieldWidth; x++)
         for (int y = 0; y < fieldHeight; y++)
-            if (x == 0 || x == fieldWidth - 1 || y == 0 || y == fieldHeight - 1)
-                pField[y * fieldWidth + x] = 3; // #
-            else
-                pField[y * fieldWidth + x] = 0; // blank space
+            pField[y * fieldWidth + x] = (x == 0 || x == fieldWidth - 1 ||y == fieldHeight - 1) ? fieldBorder : fieldSpace;
 
     /************************************************************/
     /***********************Game Loop****************************/
     bool gameOver = false;
-    int fieldBorder = 5; // how far is the field away from the upper left
-    wstring fieldSymbol = L" +-#"; // field elements
 
     int currentBlock = 0;
     int currentRotation = 0;
     int currentX = fieldWidth / 2;
     int currentY = 0;
 
+    const int keyNum = 4;
+    bool key[keyNum];
+
     while (gameOver == false)
     {
         /**************Timing*****************/
-
+        this_thread::sleep_for(50ms);
         /**************Input******************/
-
+        for (int i = 0; i < keyNum; i++)
+            key[i] = (0x8000 & GetAsyncKeyState((unsigned char)("\x27\x25\x28\x26"[i]))) != 0;
         /**************Logic******************/
+        // Right Arrow Key
+        currentX += (key[0] && BlockCollision(currentBlock, currentRotation, currentX + 1, currentY)) ? 1 : 0;
+        // Left Arrow Key
+        currentX -= (key[1] && BlockCollision(currentBlock, currentRotation, currentX - 1, currentY)) ? 1 : 0;
+        // Down Arrow Key
+        currentY += (key[2] && BlockCollision(currentBlock, currentRotation, currentX, currentY + 1)) ? 1 : 0;
+        // Up Arrow Key
+        currentRotation += (key[3] && BlockCollision(currentBlock, currentRotation + 1, currentX, currentY)) ? 1 : 0;
+
 
         /**************Output*****************/
 
         /*********Draw field********/
         for (int x = 0; x < fieldWidth; x++)
             for (int y = 0; y < fieldHeight; y++)
-                screen[(y + fieldBorder) * screenWidth + (x + fieldBorder)] = fieldSymbol[pField[y * fieldWidth + x]];
+                screen[(y + fieldBorder) * screenWidth + (x + fieldBorder)] = fieldElement[pField[y * fieldWidth + x]];
 
         /*****Draw Current Block****/
         for (int x = 0; x < blockLength; x++)
             for (int y = 0; y < blockLength; y++)
-                if (blocks[currentBlock][Rotate(x, y , currentBlock)] != L'.')
-                    screen[(currentY + y + fieldBorder) * screenWidth + (currentX + x + 2)] = fieldSymbol[1];
+                if (blocks[currentBlock][Rotate(x, y, currentBlock)] != L'.')
+                    screen[(currentY + y + fieldBorder) * screenWidth + (currentX + x + fieldBorder)] = fieldElement[fieldBlock];
 
         /******Display frame********/
         WriteConsoleOutputCharacter(
@@ -181,7 +197,7 @@ bool BlockCollision(int block, int rotation, int posX, int posY)
 
             // Check if the dropping block is within the field
             if (posX + x >= 0 && posX + x < fieldWidth)
-                if(posY + y >= 0 && posY +y < fieldHeight)
+                if (posY + y >= 0 && posY + y < fieldHeight)
                     if (blocks[block][blockIndex] != L'.' && pField[fieldIndex] != 0)
                         return false; // dropped on a block
         }
