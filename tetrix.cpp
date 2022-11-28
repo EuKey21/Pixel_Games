@@ -113,11 +113,18 @@ int main()
 
     const int keyNum = 4;
     bool key[keyNum];
+    bool rotateHold = false;
+
+    int speed = 20;
+    int speedCounter = 0;
+    bool forceDown = false;
 
     while (gameOver == false)
     {
         /**************Timing*****************/
-        this_thread::sleep_for(50ms);
+        this_thread::sleep_for(50ms); // Game Tick
+        speedCounter++;
+        forceDown = (speedCounter == speed);
         /**************Input******************/
         for (int i = 0; i < keyNum; i++)
             key[i] = (0x8000 & GetAsyncKeyState((unsigned char)("\x27\x25\x28\x26"[i]))) != 0;
@@ -129,7 +136,33 @@ int main()
         // Down Arrow Key
         currentY += (key[2] && BlockCollision(currentBlock, currentRotation, currentX, currentY + 1)) ? 1 : 0;
         // Up Arrow Key
-        currentRotation += (key[3] && BlockCollision(currentBlock, currentRotation + 1, currentX, currentY)) ? 1 : 0;
+        if(key[3])
+        {
+            currentRotation += (!rotateHold && BlockCollision(currentBlock, currentRotation + 1, currentX, currentY)) ? 1 : 0;
+            rotateHold = true;
+        }
+        else
+        {
+            rotateHold = false;
+        }
+
+        if(forceDown)
+        {
+            if(BlockCollision(currentBlock, currentRotation, currentX, currentY));
+            {
+                currentY++;
+            }
+            else
+            {
+                // lock the current blocks in the field
+
+                // check if the row fill
+
+                // Next blcok
+            }
+        }
+        
+        
 
 
         /**************Output*****************/
@@ -142,7 +175,7 @@ int main()
         /*****Draw Current Block****/
         for (int x = 0; x < blockLength; x++)
             for (int y = 0; y < blockLength; y++)
-                if (blocks[currentBlock][Rotate(x, y, currentBlock)] != L'.')
+                if (blocks[currentBlock][Rotate(x, y, currentRotation)] != L'.')
                     screen[(currentY + y + fieldBorder) * screenWidth + (currentX + x + fieldBorder)] = fieldElement[fieldBlock];
 
         /******Display frame********/
