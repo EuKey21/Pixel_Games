@@ -1,11 +1,12 @@
 #include <iostream>
 #include <thread>
 #include <Windows.h>
+#include <stdlib.h>
 using namespace std;
 
 
-
-wstring blocks[7]; // 4x4
+const int nBlocks = 7;
+wstring blocks[nBlocks]; // 4x4
 int blockLength = 4;
 
 int screenWidth = 120;
@@ -24,6 +25,23 @@ const int fieldBlock = 1;
 const int fieldFill = 2;
 const int fieldBorder = 3;
 
+class CurrentBlock
+{
+public:
+    CurrentBlock()
+    {
+        currBlock = rand % nBlocks;
+        currRotation = 0;
+        currX = 0;
+        currY = fieldWidth / 2;
+    }
+private:
+    int currBlock;
+    int currRotation;
+    int currX;
+    int currY;
+};
+
 /****************************************************************
 x -> x coordinates
 y -> y coordiantes
@@ -35,9 +53,13 @@ r -> rotating direction
 8   9  10  11       .       .       .       .       .       .
 12 13  14  15       15 .... 3       3  .... 0       0 .... 12
 ****************************************************************/
-int Rotate(int x, int y, int r);
+int BlockRotate(int x, int y, int r);
 
-bool BlockCollision(int block, int rotation, int posX, int posY);
+bool BlockFitsInField(int block, int rotation, int posX, int posY);
+
+void BlockSet(int *currentBlock, int *currentRotation, int *currentX, int *currentY);
+
+
 
 int main()
 {
@@ -130,15 +152,15 @@ int main()
             key[i] = (0x8000 & GetAsyncKeyState((unsigned char)("\x27\x25\x28\x26"[i]))) != 0;
         /**************Logic******************/
         // Right Arrow Key
-        currentX += (key[0] && BlockCollision(currentBlock, currentRotation, currentX + 1, currentY)) ? 1 : 0;
+        currentX += (key[0] && BlockFitsInField(currentBlock, currentRotation, currentX + 1, currentY)) ? 1 : 0;
         // Left Arrow Key
-        currentX -= (key[1] && BlockCollision(currentBlock, currentRotation, currentX - 1, currentY)) ? 1 : 0;
+        currentX -= (key[1] && BlockFitsInField(currentBlock, currentRotation, currentX - 1, currentY)) ? 1 : 0;
         // Down Arrow Key
-        currentY += (key[2] && BlockCollision(currentBlock, currentRotation, currentX, currentY + 1)) ? 1 : 0;
+        currentY += (key[2] && BlockFitsInField(currentBlock, currentRotation, currentX, currentY + 1)) ? 1 : 0;
         // Up Arrow Key
         if(key[3])
         {
-            currentRotation += (!rotateHold && BlockCollision(currentBlock, currentRotation + 1, currentX, currentY)) ? 1 : 0;
+            currentRotation += (!rotateHold && BlockFitsInField(currentBlock, currentRotation + 1, currentX, currentY)) ? 1 : 0;
             rotateHold = true;
         }
         else
@@ -148,17 +170,20 @@ int main()
 
         if(forceDown)
         {
-            if(BlockCollision(currentBlock, currentRotation, currentX, currentY));
+            if(BlockFitsInField(currentBlock, currentRotation, currentX, currentY))
             {
                 currentY++;
             }
             else
             {
+                ;
                 // lock the current blocks in the field
 
                 // check if the row fill
 
                 // Next blcok
+
+                // Gameover - Blocks go out of field
             }
         }
         
@@ -175,7 +200,7 @@ int main()
         /*****Draw Current Block****/
         for (int x = 0; x < blockLength; x++)
             for (int y = 0; y < blockLength; y++)
-                if (blocks[currentBlock][Rotate(x, y, currentRotation)] != L'.')
+                if (blocks[currentBlock][BlockRotate(x, y, currentRotation)] != L'.')
                     screen[(currentY + y + fieldBorder) * screenWidth + (currentX + x + fieldBorder)] = fieldElement[fieldBlock];
 
         /******Display frame********/
@@ -194,7 +219,7 @@ int main()
     return 0;
 }
 
-int Rotate(int x, int y, int r)
+int BlockRotate(int x, int y, int r)
 {
     int posZero000 = 0;
     int posZero090 = 12;
@@ -220,12 +245,12 @@ int Rotate(int x, int y, int r)
     return index;
 }
 
-bool BlockCollision(int block, int rotation, int posX, int posY)
+bool BlockFitsInField(int block, int rotation, int posX, int posY)
 {
     for (int x = 0; x < blockLength; x++)
         for (int y = 0; y < blockLength; y++)
         {
-            int blockIndex = Rotate(x, y, rotation);
+            int blockIndex = BlockRotate(x, y, rotation);
             int fieldIndex = (posY + y) * fieldWidth + (posX + x);
 
             // Check if the dropping block is within the field
@@ -236,3 +261,5 @@ bool BlockCollision(int block, int rotation, int posX, int posY)
         }
     return true;
 }
+
+
