@@ -25,23 +25,6 @@ const int fieldBlock = 1;
 const int fieldFill = 2;
 const int fieldBorder = 3;
 
-class CurrentBlock
-{
-public:
-    CurrentBlock()
-    {
-        currBlock = rand % nBlocks;
-        currRotation = 0;
-        currX = 0;
-        currY = fieldWidth / 2;
-    }
-private:
-    int currBlock;
-    int currRotation;
-    int currX;
-    int currY;
-};
-
 /****************************************************************
 x -> x coordinates
 y -> y coordiantes
@@ -56,10 +39,6 @@ r -> rotating direction
 int BlockRotate(int x, int y, int r);
 
 bool BlockFitsInField(int block, int rotation, int posX, int posY);
-
-void BlockSet(int *currentBlock, int *currentRotation, int *currentX, int *currentY);
-
-
 
 int main()
 {
@@ -128,7 +107,7 @@ int main()
     /***********************Game Loop****************************/
     bool gameOver = false;
 
-    int currentBlock = 0;
+    int currentBlock = rand() % nBlocks;
     int currentRotation = 0;
     int currentX = fieldWidth / 2;
     int currentY = 0;
@@ -170,21 +149,59 @@ int main()
 
         if(forceDown)
         {
-            if(BlockFitsInField(currentBlock, currentRotation, currentX, currentY))
+            if(BlockFitsInField(currentBlock, currentRotation, currentX, currentY + 1))
             {
                 currentY++;
             }
             else
             {
-                ;
                 // lock the current blocks in the field
+                for (int x = 0; x < blockLength; x++)
+                    for (int y = 0; y < blockLength; y++)
+                        if(blocks[currentBlock][BlockRotate(x, y, currentRotation)] != L'.')
+                            pField[(currentY + y) * fieldWidth + (currentX + x)] = fieldBlock;
 
-                // check if the row fill
+                // check if the row are filled
+                for (int y = 0; y < blockLength; y++)
+                {
+                    if (currentY + y < fieldHeight - 1)
+                    {
+                        bool filled = true;
+                        for(int x = 1; x < fieldWidth - 1; x++)
+                        {
+                            filled &= (pField[(currentY + y) * fieldWidth + x]) != 0;
+                        }
+
+                        if (filled)
+                        {
+                            // removed the row that is filled
+                            int x = 1;
+                            for(; x < fieldWidth - 1; x++)
+                            {
+                                pField[(currentY + y) * fieldWidth + x] = fieldFill;
+                            }
+                            
+                            while(x > 1)
+                            {
+                                x--;
+                                pField[(currentY + y) * fieldWidth + x] = fieldSpace; 
+                            }
+                        }
+                    }
+                }
 
                 // Next blcok
+                
+                currentX = fieldWidth / 2;
+                currentY = 0;
+                currentRotation = 0;
+                currentBlock = rand() % nBlocks;
+                
 
                 // Gameover - Blocks go out of field
+                gameOver = !BlockFitsInField(currentBlock, currentRotation, currentX, currentY);
             }
+            speedCounter = 0;
         }
         
         
