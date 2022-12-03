@@ -19,11 +19,10 @@ int fieldArea = fieldWidth * fieldHeight;
 unsigned char* pField = nullptr;
 
 int fieldBorderDistance = 5; // how far is the field away from the upper left
-wstring fieldElement = L" +-#"; // field elements
+wstring fieldElement = L" +#"; // field elements
 const int fieldSpace = 0;
 const int fieldBlock = 1;
-const int fieldFill = 2;
-const int fieldBorder = 3;
+const int fieldBorder = 2;
 
 /****************************************************************
 x -> x coordinates
@@ -174,24 +173,18 @@ int main()
 
                         if (filled)
                         {
-                            // removed the row that is filled
-                            int x = 1;
-                            for(; x < fieldWidth - 1; x++)
+                            // removed the row that is filled    
+                            for(int x = 1; x < fieldWidth - 1; x++)
                             {
-                                pField[(currentY + y) * fieldWidth + x] = fieldFill;
-                            }
-                            
-                            while(x > 1)
-                            {
-                                x--;
-                                pField[(currentY + y) * fieldWidth + x] = fieldSpace; 
+                                for (int y2 = currentY + y; y2 > 0; y2--)
+						            pField[y2 * fieldWidth + x] = pField[(y2 - 1) * fieldWidth + x];
+					            pField[x] = fieldSpace;
                             }
                         }
                     }
                 }
 
                 // Next blcok
-                
                 currentX = fieldWidth / 2;
                 currentY = 0;
                 currentRotation = 0;
